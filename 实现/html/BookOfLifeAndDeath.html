@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西游生死簿</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* 中文书法字体 */
+        html[lang="zh-CN"] * {
+            font-family: 'Ma Shan Zheng', 
+                        "PingFang SC", "Hiragino Sans GB", 
+                        "Microsoft YaHei", sans-serif;
+        }
+
+        /* 英文无衬线字体 */
+        html:not([lang="zh-CN"]) * {
+            font-family: 'Segoe UI', Tahoma,
+                        Arial, "Helvetica Neue",
+                        sans-serif;
+        }
+
+        /* 特殊元素保持通用字体 */
+        .current-time, button, input {
+            font-family: inherit !important;
+        }
+
+        body {
+            background: linear-gradient(to bottom, #1a0a2e, #0d0630, #060318);
+            color: #e6d3a7;
+            min-height: 10vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            /* overflow: hidden; */
+            position: relative;
+        }
+
+        /* 地狱火焰背景效果 */
+        .hellfire {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 30%;
+            background: linear-gradient(to top, rgba(139,0,0,0.7), transparent);
+            z-index: -1;
+        }
+        
+        .hellfire::after {
+            content: '';
+            position: absolute;
+            bottom: -30px;
+            width: 100%;
+            height: 100px;
+            background: radial-gradient(ellipse at center, rgba(255, 69, 0, 0.8) 0%, rgba(178, 34, 34, 0.6) 30%, rgba(139, 0, 0, 0) 70%);
+            animation: fire 3s infinite alternate;
+        }
+        
+        @keyframes fire {
+            0% { transform: translateY(0) scale(1.05); }
+            100% { transform: translateY(10px) scale(1); }
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .time-controller {
+            flex: 0 0 320px;
+            background: rgba(25, 15, 45, 0.7);
+            border-radius: 12px;
+            padding: 25px;
+            margin-right: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 2px solid #704214;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .time-controller::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(to right, #daa520, #ff8c00, #daa520);
+            box-shadow: 0 0 15px #ff8c00;
+        }
+        
+        .book-section {
+            flex: 1;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%231d1529" /><path d="M0,0 L50,0 L30,100 L0,100 Z" fill="%23301c4d" opacity="0.6" /><path d="M50,0 L100,0 L100,100 L30,100 Z" fill="%23301c4d" opacity="0.6" /></svg>'),
+                        linear-gradient(to bottom, #261b35, #180f29);
+            background-size: 100px 100px, cover;
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+            padding: 30px;
+            position: relative;
+            border: 1px solid #704214;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .title-header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .title-header h1 {
+            font-size: 3.5rem;
+            color: #ffcc66;
+            text-shadow: 0 0 15px rgba(255, 102, 0, 0.8);
+            letter-spacing: 8px;
+            margin: 10px 0;
+            position: relative;
+            background: linear-gradient(to bottom, #ffcc66, #ff9900);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .title-header h1::after {
+            content: '';
+            display: block;
+            width: 80%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, #daa520, transparent);
+            margin: 15px auto 0;
+        }
+        
+        .title-header h2 {
+            font-size: 1.5rem;
+            color: #cc9966;
+            font-weight: normal;
+            margin-top: 10px;
+        }
+        
+        /* 时间显示设计 */
+        .time-display {
+            text-align: center;
+            background: rgba(0,0,0,0.4);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 1px solid #704214;
+        }
+        
+        .current-time {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #ff9900;
+            text-shadow: 0 0 20px rgba(255, 69, 0, 0.8);
+            margin: 15px 0;
+            letter-spacing: 3px;
+            background: linear-gradient(to bottom, #ffcc66, #ff9900);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .year-range {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2rem;
+            color: #cc9966;
+            margin-top: 10px;
+        }
+        
+        /* 时间控制按钮 */
+        .time-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+        
+        button {
+            background: linear-gradient(to bottom, #3d2a1a, #261808);
+            color: #e6d3a7;
+            border: 2px solid #704214;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            outline: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        button:hover {
+            background: linear-gradient(to bottom, #4e3a2b, #352411);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .custom-time {
+            margin-top: 25px;
+        }
+        
+        .custom-time h3 {
+            color: #daa520;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.4rem;
+        }
+        
+        .time-input {
+            display: flex;
+            gap: 10px;
+        }
+        
+        input[type="number"] {
+            flex: 1;
+            background: rgba(25, 15, 45, 0.7);
+            border: 2px solid #704214;
+            color: #ffcc66;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            outline: none;
+        }
+        
+        input[type="number"]:focus {
+            border-color: #daa520;
+            box-shadow: 0 0 10px rgba(218, 165, 32, 0.5);
+        }
+        
+        /* 语言切换 */
+        .language-switch {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+        }
+        
+        .music-control {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .search-container {
+            margin-bottom: 25px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .search-container input {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 8px;
+            background: rgba(25, 15, 45, 0.7);
+            border: 2px solid #704214;
+            color: #e6d3a7;
+            font-size: 1.2rem;
+        }
+        
+        /* 角色卡片设计 */
+        .character-card {
+            background: linear-gradient(to bottom right, rgba(40, 25, 65, 0.9), rgba(30, 15, 45, 0.9));
+            border: 3px solid #704214;
+            border-radius: 12px;
+            padding: 25px;
+            min-height: 500px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+        
+        .character-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M0,0 L30,30 L0,60 Z" fill="%23301c4d" opacity="0.1"/><path d="M100,100 L70,70 L100,40 Z" fill="%23301c4d" opacity="0.1"/></svg>');
+            opacity: 0.3;
+            z-index: 0;
+        }
+        
+        .character-content {
+            position: relative;
+            z-index: 2;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            grid-gap: 25px;
+            height: 100%;
+        }
+        
+        .character-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .character-image div {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        border: 5px solid #704214;
+        background: linear-gradient(45deg, #2a1d41, #452e6a);
+        box-shadow: 0 0 30px rgba(112, 66, 20, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 7rem;
+        overflow: hidden;
+        }
+        
+        .character-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* 保持比例裁剪 */
+        border-radius: 50%; /* 圆形裁剪 */
+        border: 2px solid #daa520; /* 金色边框 */
+        box-shadow: 0 0 20px rgba(218, 165, 32, 0.5); /* 发光效果 */
+        }
+        
+        .character-details {
+            padding: 15px;
+        }
+        
+        .character-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #704214;
+            padding-bottom: 15px;
+        }
+        
+        .character-name {
+            font-size: 2.8rem;
+            color: #ffcc66;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 102, 0, 0.7);
+        }
+        
+        .status-indicator {
+            font-size: 1.5rem;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-alive {
+            background: rgba(0, 100, 0, 0.4);
+            color: #90ee90;
+            border: 2px solid #228b22;
+        }
+        
+        .status-dead {
+            background: rgba(139, 0, 0, 0.4);
+            color: #ff9999;
+            border: 2px solid #8b0000;
+        }
+        
+        .attribute-row {
+            display: flex;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed #704214;
+        }
+        
+        .attribute-label {
+            flex: 0 0 140px;
+            color: #daa520;
+            font-size: 1.3rem;
+        }
+        
+        .attribute-value {
+            flex: 1;
+            font-size: 1.3rem;
+            color: #e6d3a7;
+            text-shadow: 0 0 5px rgba(255, 204, 102, 0.3);
+        }
+        
+        .cause-red {
+            color: #ff6666;
+            text-shadow: 0 0 8px rgba(255, 102, 102, 0.5);
+            font-weight: bold;
+        }
+        
+        .character-bio {
+            margin-top: 25px;
+            padding: 15px;
+            background: rgba(20, 10, 30, 0.6);
+            border-radius: 8px;
+            border: 1px solid #704214;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            text-align: justify;
+        }
+        
+        /* 分页和书籍效果 */
+        .book-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #704214;
+        }
+        
+        .page-indicator {
+            font-size: 1.3rem;
+            color: #cc9966;
+        }
+        
+        .page-controls {
+            display: flex;
+            gap: 15px;
+        }
+        
+        /* 动画效果 */
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px rgba(255, 165, 0, 0.7); }
+            50% { box-shadow: 0 0 20px rgba(255, 69, 0, 0.9); }
+            100% { box-shadow: 0 0 5px rgba(255, 165, 0, 0.7); }
+        }
+        
+        .glowing {
+            animation: glow 2s infinite ease-in-out;
+        }
+        
+        .flip-enter-active, .flip-leave-active {
+            transition: all 0.7s ease;
+        }
+        
+        .flip-enter-from, .flip-leave-to {
+            opacity: 0;
+            transform: rotateY(90deg);
+        }
+        
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.5s ease;
+        }
+        
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+        
+        .status-change {
+            animation: statusChange 1s ease-in-out;
+        }
+        
+        @keyframes statusChange {
+            0% { transform: scale(1); text-shadow: 0 0 10px currentColor; }
+            50% { transform: scale(1.2); text-shadow: 0 0 25px currentColor; }
+            100% { transform: scale(1); text-shadow: 0 0 10px currentColor; }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- 地狱火焰背景效果 -->
+        <div class="hellfire"></div>
+        
+        <!-- 音乐控制 -->
+        <div class="music-control">
+            <button @click="toggleMusic">{{ language === 'zh' ? (musicPlaying ? '停止音乐' : '播放音乐') : (musicPlaying ? 'Stop Music' : 'Play Music') }}</button>
+        </div>
+        
+        <!-- 语言切换 -->
+        <div class="language-switch">
+            <button @click="toggleLanguage">{{ language === 'zh' ? '中文/English' : 'English/中文' }}</button>
+        </div>
+        
+        <div class="container">
+            <!-- 时间控制器 -->
+            <div class="time-controller">
+                <!-- 虚拟时间线 -->
+                <div class="time-display">
+                    <h3>{{ language === 'zh' ? '虚拟时间线' : 'Virtual Timeline' }}</h3>
+                    <div class="current-time glowing">
+                        {{ currentYear }} {{ language === 'zh' ? '年' : 'year' }}
+                    </div>
+                    <div class="year-range">
+                        <span>0 {{ language === 'zh' ? '年' : '' }}</span>
+                        <span>2027 {{ language === 'zh' ? '年' : '' }}</span>
+                    </div>
+                </div>
+                
+                <!-- 时间控制 -->
+                <div class="time-controls">
+                    <button @click="toggleTimer">{{ timerRunning ? (language === 'zh' ? '暂停时间' : 'Pause') : (language === 'zh' ? '开始时间' : 'Start') }}</button>
+                    <button @click="resetTimer">{{ language === 'zh' ? '重置时间' : 'Reset' }}</button>
+                </div>
+                
+                <!-- 自定义时间 -->
+                <div class="custom-time">
+                    <h3>{{ language === 'zh' ? '时间穿梭' : 'Time Travel' }}</h3>
+                    <div class="time-input">
+                        <input type="number" v-model="customYear" min="0" max="2027">
+                        <button @click="jumpToYear">{{ language === 'zh' ? '跳转' : 'Go' }}</button>
+                    </div>
+                </div>
+                
+                <!-- 角色状态记录 -->
+                <div class="status-change-info">
+                    <h3>{{ language === 'zh' ? '状态变更记录' : 'State Change Record' }}</h3>
+                    <div v-for="(change, index) in statusChanges" :key="index" class="status-change-item">
+                        {{ change }}
+                    </div>
+                    <div v-if="statusChanges.length === 0" class="no-change">
+                        {{ language === 'zh' ? '暂无变更' : 'No recent changes' }}
+                    </div>
+                </div>
+            </div>  
+            
+            <!-- 书 -->
+            <div class="book-section">
+                
+                <div class="title-header">
+                    <h1>{{ language === 'zh' ? '西游生死簿' : 'Journey to the West\'s Book of Life and Death'}}</h1>
+                    <h2>{{ language === 'zh' ? '记录天地人神妖的生死命运' : 'Chronicle of Life and Death in Journey to the West' }}</h2>
+                </div>
+                
+                <div class="search-container">
+                    <input type="text" v-model="searchQuery" :placeholder="language === 'zh' ? '搜索角色名称...' : 'Search character...'">
+                    <button @click="searchQuery = ''">{{ language === 'zh' ? '清空' : 'Clear' }}</button>
+                </div>
+                
+                    <transition name="flip" mode="out-in">
+                    <div v-if="filteredCharacters.length" class="character-card" :key="currentCharacterIndex">
+                        <div class="character-content">
+                            <div class="character-image">
+                                <img v-bind:src="getEmoji(currentCharacter.name)">
+                            </div>
+                            <div class="character-details">
+                                <div class="character-header">
+                                    <div class="character-name">{{ getLocalizedProp(currentCharacter, 'name') }}</div>
+                                    <div class="status-indicator" :class="getStatusClass(currentCharacter)" :key="statusKey">
+                                        {{ getStatusText(currentCharacter) }}
+                                    </div>
+                                </div>
+                                
+                                <div class="attribute-row">
+                                    <div class="attribute-label">{{ language === 'zh' ? '从属类别:' : 'Affiliation:' }}</div>
+                                    <div class="attribute-value">
+                                        {{ getLocalizedProp(currentCharacter, 'affiliation') }}
+                                    </div>
+                                </div>
+                                
+                                <div class="attribute-row">
+                                    <div class="attribute-label">{{ language === 'zh' ? '出生时间:' : 'Birth Year:' }}</div>
+                                    <div class="attribute-value">{{ currentCharacter.birthYear }} {{ language === 'zh' ? '年' : '' }}</div>
+                                </div>
+                                
+                                <div class="attribute-row" v-if="isDead(currentCharacter)">
+                                    <div class="attribute-label">{{ language === 'zh' ? '死亡时间:' : 'Death Year:' }}</div>
+                                    <div class="attribute-value">{{ currentCharacter.deathYear }} {{ language === 'zh' ? '年' : '' }}</div>
+                                </div>
+                                
+                                <div class="attribute-row" v-if="isDead(currentCharacter)">
+                                    <div class="attribute-label">{{ language === 'zh' ? '死因:' : 'Cause of Death:' }}</div>
+                                    <div class="attribute-value cause-red">{{ getLocalizedProp(currentCharacter, 'causeOfDeath') }}</div>
+                                </div>
+                                
+                                <div class="character-bio">
+                                    {{ getLocalizedProp(currentCharacter, 'bio') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="character-card" key="no-result">
+                        <div class="character-content" style="justify-content: center; align-items: center;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 5rem;">🕳️</div>
+                                <h2 style="font-size: 2.5rem; margin-top: 20px;">{{ language === 'zh' ? '查无此角色' : 'No characters found' }}</h2>
+                                <p>{{ language === 'zh' ? '生死簿中没有找到匹配的角色' : 'No matching characters in the chronicle' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
+                
+                <div class="book-footer">
+                    <div class="page-indicator">
+                        {{ language === 'zh' ? '第' : 'Page' }} {{ currentPage + 1 }} {{ language === 'zh' ? '页' : '' }} / {{ language === 'zh' ? '共' : 'of' }} {{ filteredCharacters.length }} {{ language === 'zh' ? '页' : '' }}
+                    </div>
+                    <div class="page-controls">
+                        <button @click="prevPage" :disabled="currentPage === 0">{{ language === 'zh' ? '上一页' : 'Previous' }}</button>
+                        <button @click="nextPage" :disabled="currentPage === filteredCharacters.length - 1">{{ language === 'zh' ? '下一页' : 'Next' }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, reactive, watch, onMounted, onUnmounted} = Vue;
+        
+        createApp({
+            setup() {
+                // 状态管理
+                const currentYear = ref(0);
+                const timerRunning = ref(false);
+                const timer = ref(null);
+                const customYear = ref('');
+                const language = ref('zh');
+                const musicPlaying = ref(false);
+                const audioPlayer = ref(null);
+                const searchQuery = ref('');
+                const currentPage = ref(0);
+                const statusChanges = ref([]);
+                const statusKey = ref(0);
+                
+                onMounted(()=>{
+                    audioPlayer.value = new Audio('../music/yungongxunyin.mp3');
+                    audioPlayer.value.loop = true;
+                    audioPlayer.value.preload = true;
+                })
+
+                // 角色数据（中英文）
+                const characters = reactive([
+                    {
+                        id: 1,
+                        name: { zh: "孙悟空", en: "Sun Wukong" },
+                        affiliation: { zh: "神仙", en: "Immortal" },
+                        bio: {
+                            zh: "齐天大圣，西游记中主角，唐僧的大徒弟。原为石猴，拜菩提祖师为师学得法术，能七十二变。曾大闹天宫，后被如来佛祖压在五行山下五百年。",
+                            en: "The Monkey King, protagonist of Journey to the West, is the eldest disciple of Tang Sanzang. Originally a stone monkey, he learned magic from Patriarch Subodhi, gaining 72 transformations. He once wreaked havoc in Heaven and was imprisoned under Five Elements Mountain by Buddha for five centuries."
+                        },
+                        causeOfDeath: {
+                            zh: "真假美猴王中被六耳猕猴取代，神秘消失",
+                            en: "Replaced by the Six-Eared Macaque in 'The Real and Fake Monkey King', mysteriously vanished"
+                        },
+                        birthYear: 50,
+                        deathYear: 1650
+                    },
+                    {
+                        id: 2,
+                        name: { zh: "白骨精", en: "White Bone Demon" },
+                        affiliation: { zh: "妖怪", en: "Demon" },
+                        bio: {
+                            zh: "白虎岭上的白骨尸魔，三番两次变化成女子、老妪、老翁欺骗唐僧师徒，是唯一一个不需要法宝就能变化三次的妖怪。",
+                            en: "A demon of white bones at White Tiger Mountain. She transformed into a woman, old woman, and old man to deceive Tang Sanzang and his disciples multiple times. She is the only demon capable of transforming three times without any magical treasures."
+                        },
+                        causeOfDeath: {
+                            zh: "被孙悟空三打白骨精击杀",
+                            en: "Beaten to death by Sun Wukong in 'Three Strikes Against White Bone Demon'"
+                        },
+                        birthYear: 630,
+                        deathYear: 640
+                    },
+                    {
+                        id: 3,
+                        name: { zh: "二郎神", en: "Erlang Shen" },
+                        affiliation: { zh: "神仙", en: "Immortal" },
+                        bio: {
+                            zh: "又称二郎显圣真君，玉帝的外甥，中国神话中的战神。曾奉旨参与围剿花果山捉拿孙悟空，法力高强。",
+                            en: "Also known as True Lord Erlang, nephew of the Jade Emperor, and war god in Chinese mythology. Sent to capture Sun Wukong at Flower Fruit Mountain. Possesses formidable divine powers."
+                        },
+                        causeOfDeath: {
+                            zh: "至今存活于神话传说中",
+                            en: "Alive in mythological legends to this day"
+                        },
+                        birthYear: 60,
+                        deathYear: null
+                    },
+                    {
+                        id: 4,
+                        name: { zh: "唐僧", en: "Tang Sanzang" },
+                        affiliation: { zh: "人类", en: "Human" },
+                        bio: {
+                            zh: "原型为唐朝高僧玄奘法师，奉唐太宗之命前往西天取经。性格慈悲为怀但过于仁慈，常被妖怪所欺骗。在徒弟们保护下完成取经大业。",
+                            en: "Based on the eminent monk Xuanzang of Tang Dynasty. He journeyed to India to retrieve Buddhist scriptures under Emperor Taizong's order. Extremely compassionate but overly merciful, he was often deceived by demons. With disciples' protection, he completed the pilgrimage and attained Buddhahood."
+                        },
+                        causeOfDeath: {
+                            zh: "成佛后超脱生死轮回",
+                            en: "Transcended life-death cycle upon achieving Buddhahood"
+                        },
+                        birthYear: 602,
+                        deathYear: 664
+                    },
+                    {
+                        id: 5,
+                        name: { zh: "猪八戒", en: "Zhu Bajie" },
+                        affiliation: { zh: "神仙", en: "Immortal" },
+                        bio: {
+                            zh: "原为天蓬元帅，因调戏嫦娥被贬下凡。被观音菩萨点化后成为唐僧二徒弟，武器九齿钉耙。取经后封为净坛使者，虽好吃懒做却忠勇可爱。",
+                            en: "Former Marshal of Heavenly Canopy, banished to earth. Became Tang Sanzang's second disciple after enlightenment by Guanyin. Despite laziness and gluttony, loyal and brave. Sealed as Altar Cleanser after pilgrimage."
+                        },
+                        causeOfDeath: {
+                            zh: "成佛后超脱生死轮回",
+                            en: "Transcended life-death cycle upon achieving Buddhahood"
+                        },
+                        birthYear: 150,
+                        deathYear: null
+                    },
+                    {
+                        id: 6,
+                        name: { zh: "如来佛祖", en: "Buddha" },
+                        affiliation: { zh: "神仙", en: "Immortal" },
+                        bio: {
+                            zh: "佛教最高领袖，五指山镇压孙悟空。佛法无边智慧广大，制定取经计划救渡众生，真身居于西方极乐世界。",
+                            en: "Supreme leader of Buddhism who subdued Sun Wukong under Five Finger Mountain. Designed pilgrimage to save humanity. Resides in Western Paradise with boundless wisdom."
+                        },
+                        causeOfDeath: {
+                            zh: "真佛不生不灭",
+                            en: "Cosmic Buddha beyond life-death cycles"
+                        },
+                        birthYear: 0,
+                        deathYear: null
+                    },
+                    {
+                        id: 7,
+                        name: { zh: "牛魔王", en: "Bull Demon King" },
+                        affiliation: { zh: "妖怪", en: "Demon" },
+                        bio: {
+                            zh: "孙悟空结义兄弟，火焰山主人。身怀七十二变神通，手持混铁棍。因红孩儿事件与悟空反目，后被天庭降服皈依佛门。",
+                            en: "Sworn brother of Sun Wukong, ruler of Flame Mountain. Master of transformations, wields iron staff. Turned against Wukong after Red Boy incident, later subdued by Heaven."
+                        },
+                        causeOfDeath: {
+                            zh: "被佛法感化后隐居修炼",
+                            en: "Retreated to seclusion after Buddhist enlightenment"
+                        },
+                        birthYear: 200,
+                        deathYear: 1650
+                    },
+                    {
+                        id: 8,
+                        name: { zh: "巨灵神", en: "Giant Spirit God" },
+                        affiliation: { zh: "神仙", en: "Immortal" },
+                        bio: {
+                            zh: "天庭先锋神将，手持宣花斧。花果山讨伐孙悟空时首战被击败，骁勇善战但技不如猴。后任天门镇守神将。",
+                            en: "Heaven's vanguard commander with floral axe. First challenger defeated by Sun Wukong at Flower Fruit Mountain. Known for valor despite lower combat skills, later guarded heavenly gates."
+                        },
+                        causeOfDeath: {
+                            zh: "神话时代后隐入天界",
+                            en: "Withdrew to celestial realm after mythical era"
+                        },
+                        birthYear: 300,
+                        deathYear: 1400
+                    },
+                    {
+                        id: 9,
+                        name: { zh: "小白龙", en: "White Dragon Horse" },
+                        affiliation: { zh: "神仙", en: "Immortal" },
+
+                        bio: {
+                            zh: "西海龙王三太子，因纵火烧殿被贬。鹰愁涧化白马驮唐僧取经，后封八部天龙广力菩萨。沉静坚毅，关键时化龙出战。",
+                            en: "Third Dragon Prince of West Sea, punished for arson. Carried Tang Sanzang as white horse after redemption. Sealed as Dragon Power Bodhisattva. Known for resilience and timely interventions."
+                        },
+                        causeOfDeath: {
+                            zh: "成佛后化身八部天龙",
+                            en: "Transformed into Eightfold Dragon upon Buddhahood"
+                        },
+                        birthYear: 400,
+                        deathYear: null
+                    },
+                    {
+                        id: 10,
+                        name: { zh: "赤脚大仙", en: "Barefoot Immortal" },
+                        affiliation: { zh: "神仙", en: "Immortal" },
+                        bio: {
+                            zh: "逍遥自在的云游神仙，常提花篮赤足行于三界。警示蟠桃会变故救众仙，点化孙悟空时显露大智慧。",
+                            en: "Carefree roaming immortal who walks barefoot through realms. Warned deities of Peach Banquet disruption. Showed profound wisdom when enlightening Sun Wukong."
+                        },
+                        causeOfDeath: {
+                            zh: "仙踪飘渺化身天地灵气",
+                            en: "Merged with cosmic energies as ethereal being"
+                        },
+                        birthYear: 1000,
+                        deathYear: null
+                    },
+                    {
+                        id: 11,
+                        name: { zh: "东海龙王", en: "Dragon King of East Sea" },
+                        affiliation: { zh: "神仙", en: "Immortal" },
+                        bio: {
+                            zh: "四海龙宫之首，执掌东海风雨。被孙悟空强取定海神针，常助唐僧师徒过海降妖。法器龙珠可呼风唤雨。",
+                            en: "Ruler of Four Seas, controls eastern waters. Provided Golden Cudgel to Sun Wukong. Often helped pilgrims cross seas with dragon pearls commanding storms."
+                        },
+                        causeOfDeath: {
+                            zh: "龙元归海永镇水脉",
+                            en: "Dragon essence returned to eternally guard seas"
+                        },
+                        birthYear: 250,
+                        deathYear: 1800
+                    },
+                    {
+                        id: 12,
+                        name: { zh: "沙僧", en: "Sha Wujing" },
+                        affiliation: { zh: "神仙", en: "Immortal" },
+                        bio: {
+                            zh: "原为卷帘大将，打破琉璃盏被贬流沙河。任劳任怨挑行李的唐僧三徒弟，降妖宝杖威力非凡。取经后封金身罗汉。",
+                            en: "Former Curtain-Raising General banished to Flowing Sand River. Tang Sanzang's third disciple carrying luggage. Used powerful demon-subduing staff, later became Golden Arhat."
+                        },
+                        causeOfDeath: {
+                            zh: "证得罗汉果位",
+                            en: "Attained Arhat enlightenment"
+                        },
+                        birthYear: 300,
+                        deathYear: null
+                    },
+                    {
+                        id: 13,
+                        name: { zh: "观音菩萨", en: "Guanyin Bodhisattva" },
+                        affiliation: { zh: "神仙", en: "Immortal" },
+                        bio: {
+                            zh: "大慈大悲救苦救难，取经计划制定者。多次化身解唐僧劫难，赐孙悟空三根救命毫毛。道场在南海普陀山。",
+                            en: "Embodiment of mercy who designed pilgrimage. Frequently rescued Tang Sanzang, gave Wukong life-saving hairs. Resides at Mount Putuo's Buddhist sanctuary."
+                        },
+                        causeOfDeath: {
+                            zh: "菩萨乘愿永不涅槃",
+                            en: "Bodhisattva vows prevent final nirvana"
+                        },
+                        birthYear: 100,
+                        deathYear: null
+                    },
+                    {
+                        id: 14,
+                        name: { zh: "唐太宗", en: "Emperor Taizong" },
+                        affiliation: { zh: "人类", en: "Human" },
+                        bio: {
+                            zh: "唐朝开明君主，委托唐僧西天取经。因魏征梦斩泾河龙王经历地府还阳，开创贞观盛世支持译传佛经。",
+                            en: "Enlightened Tang emperor who commissioned scripture quest. Visited afterlife after Jing River Dragon incident, revived to support Buddhist translation in Zhenguan golden age."
+                        },
+                        causeOfDeath: {
+                            zh: "阳寿已尽安详驾崩",
+                            en: "Peacefully passed when lifespan ended"
+                        },
+                        birthYear: 1598,
+                        deathYear: 1649
+                    },
+                    {
+                        id: 15,
+                        name: { zh: "铁扇公主", en: "Princess Iron Fan" },
+                        affiliation: { zh: "妖怪", en: "Demon" },
+                        bio: {
+                            zh: "牛魔王之妻，红孩儿之母，持有太阳精叶炼制的芭蕉扇。因红孩儿被观音收服怨恨孙悟空，三借芭蕉扇时设计周旋，最终为救丈夫交出宝扇。隐姓修行后得证正果。",
+                            en: "Wife of Bull Demon King and mother of Red Boy. Wields the Banana Leaf Fan capable of extinguishing flames. Resisted Sun Wukong's borrowing attempts due to resentment over her son's capture by Guanyin, ultimately surrendering the fan to save her husband."
+                        },
+                        causeOfDeath: {
+                            zh: "修得正果超脱轮回",
+                            en: "Achieved enlightenment beyond life-death cycle"
+                        },
+                        birthYear: 200,
+                        deathYear: null  // 地仙修为不死不灭
+                    },
+                    {
+                        id: 16,
+                        name: { zh: "蜘蛛精", en: "Spider Spirits" },
+                        affiliation: { zh: "妖怪", en: "Demon" },
+                        bio: {
+                            zh: "盘丝洞七妖之首，以蛛丝为武器善布天罗地网。化身美人诱捕唐僧，濯垢泉沐浴时遭孙悟空盗衣戏耍，最终被金箍棒打碎原形。",
+                            en: "Seven spider demons residing in Cobweb Cave. Skilled in weaving indestructible silk traps. Captured Tang Sanzang by disguising as bathing maidens, but were defeated when Sun Wukong destroyed their silk webs with golden cudgel."
+                        },
+                        causeOfDeath: {
+                            zh: "被孙悟空破除妖身",
+                            en: "Physical form destroyed by Sun Wukong"
+                        },
+                        birthYear: 620,
+                        deathYear: 640  // 取经途中被灭
+                    },
+                    {
+                        id: 17,
+                        name: { zh: "玉兔精", en: "Jade Rabbit Spirit" },
+                        affiliation: { zh: "妖怪", en: "Demon" },
+                        bio: {
+                            zh: "广寒宫捣药玉兔下凡，为报素娥仙子一掌之仇化身天竺公主。抛绣球强招唐僧为驸马，被识破后现原形交战，终被太阴星君收回月宫。",
+                            en: "Moon Palace's jade rabbit who descended to earth seeking revenge. Impersonated Indian princess to force-marry Tang Sanzang. Revealed by Sun Wukong and subdued by Moon Goddess's intervention."
+                        },
+                        causeOfDeath: {
+                            zh: "回归仙籍永生不灭",
+                            en: "Returned to immortal status eternally"
+                        },
+                        birthYear: 500,
+                        deathYear: null  // 仙籍灵兽无生死
+                    },
+                ]);
+                
+                // 过滤后的角色列表
+                const filteredCharacters = computed(() => {
+                    if (!searchQuery.value) return characters;
+                    
+                    return characters.filter(char => {
+                        const nameZh = char.name.zh.toLowerCase();
+                        const nameEn = char.name.en.toLowerCase();
+                        const query = searchQuery.value.toLowerCase();
+                        
+                        return nameZh.includes(query) || nameEn.includes(query);
+                    });
+                });
+                
+                // 当前角色
+                const currentCharacter = computed(() => {
+                    if (filteredCharacters.value.length === 0) {
+                        return {};
+                    }
+                    return filteredCharacters.value[currentPage.value];
+                });
+                
+                // 获取本地化属性
+                const getLocalizedProp = (char, prop) => {
+                    if (!char || !char[prop]) return '';
+                    return char[prop][language.value] || char[prop].zh;
+                };
+                
+                // 检查角色是否死亡
+                const isDead = (char) => {
+                    if (!char.deathYear) return false;
+                    return currentYear.value >= char.deathYear;
+                };
+                
+                // 获取角色状态文本
+                const getStatusText = (char) => {
+                    if (currentYear.value < char.birthYear) {
+                        return language.value === 'zh' ? '未出生' : 'Not Born';
+                    } else if (isDead(char)) {
+                        return language.value === 'zh' ? '死亡' : 'Deceased';
+                    }
+                    return language.value === 'zh' ? '存活' : 'Alive';
+                };
+                
+                // 获取角色状态类
+                const getStatusClass = (char) => {
+                    if (currentYear.value < char.birthYear) {
+                        return '';
+                    } else if (isDead(char)) {
+                        return 'status-dead';
+                    }
+                    return 'status-alive';
+                };
+                
+                // 获取角色的emoji图标
+                const getEmoji = (nameObj) => {
+                    const name = nameObj.zh;
+                    if (name === "孙悟空") return "../image/孙悟空.png";
+                    if (name === "白骨精") return "../image/白骨精.png";
+                    if (name === "二郎神") return "../image/二郎神.png";
+                    if (name === "唐僧") return "../image/唐僧.png";
+                    if (name === "猪八戒") return "../image/猪八戒.png";
+                    if (name === "如来佛祖") return "../image/如来佛祖.png";
+                    if (name === "牛魔王") return "../image/牛魔王.png";
+                    if (name === "巨灵神") return "../image/巨灵神.png";
+                    if (name === "小白龙") return "../image/小白龙.png";
+                    if (name === "赤脚大仙") return "../image/赤脚大仙.png";
+                    if (name === "东海龙王") return "../image/东海龙王.png";
+                    if (name === "沙僧") return "../image/沙僧.png";
+                    if (name === "观音菩萨") return "../image/观音菩萨.png";
+                    if (name === "唐太宗") return "../image/唐太宗.png";
+                    if (name === "玉兔精") return "../image/玉兔精.png";
+                    if (name === "铁扇公主") return "../image/铁扇公主.png";
+                    if (name === "蜘蛛精") return "../image/蜘蛛精.png";
+                    return "❓";
+                };
+                
+                // 切换时间控制器运行状态
+                const toggleTimer = () => {
+                    if (timerRunning.value) {
+                        stopTimer();
+                    } else {
+                        startTimer();
+                    }
+                };
+                
+                // 启动计时器
+                const startTimer = () => {
+                    timerRunning.value = true;
+                    timer.value = setInterval(() => {
+                        if (currentYear.value < 2027) {
+                            const lastYear = currentYear.value;
+                            currentYear.value++;
+                            
+                            // 检查状态变化
+                            checkStatusChanges(lastYear);
+                        } else {
+                            stopTimer();
+                        }
+                    }, 300);
+                };
+                
+                // 停止计时器
+                const stopTimer = () => {
+                    timerRunning.value = false;
+                    clearInterval(timer.value);
+                };
+                
+                // 重置时间
+                const resetTimer = () => {
+                    stopTimer();
+                    currentYear.value = 0;
+                    statusChanges.value = [];
+                    startTimer();
+                };
+                
+                // 跳转到特定年份
+                const jumpToYear = () => {
+                    const year = parseInt(customYear.value);
+                    if (!isNaN(year) && year >= 0 && year <= 2027) {
+                        const lastYear = currentYear.value;
+                        currentYear.value = year;
+                        checkStatusChanges(lastYear);
+                    }
+                    customYear.value = '';
+                };
+                
+                // 检查状态变化
+                const checkStatusChanges = (lastYear) => {
+                    const changes = [];
+                    
+                    characters.forEach(char => {
+                        if (lastYear < char.birthYear && currentYear.value >= char.birthYear) {
+                            changes.push(
+                                language.value === 'zh' 
+                                    ? `${getLocalizedProp(char, 'name')} 诞生于 ${char.birthYear}年`
+                                    : `${getLocalizedProp(char, 'name')} was born in ${char.birthYear}`
+                            );
+                        }
+                        
+                        if (char.deathYear !== null && 
+                            lastYear < char.deathYear && 
+                            currentYear.value >= char.deathYear && 
+                            currentYear.value > char.birthYear) {
+                            changes.push(
+                                language.value === 'zh' 
+                                    ? `${getLocalizedProp(char, 'name')} 殒落于 ${char.deathYear}年`
+                                    : `${getLocalizedProp(char, 'name')} died in ${char.deathYear}`
+                            );
+                        }
+                    });
+                    
+                    if (changes.length > 0) {
+                        statusChanges.value = [...statusChanges.value, ...changes].sort((a, b) => {
+                            const getYear = str => parseInt(str.match(/(诞生于|殒落于|born in|died in)\s*(\d+)/)[2]);
+                            return getYear(a) - getYear(b);
+                        });
+                        statusKey.value++;
+                    }
+                };
+                
+                // 切换语言
+                const toggleLanguage = () => {
+                    language.value = language.value === 'zh' ? 'en' : 'zh';
+                    document.documentElement.lang = language.value === 'zh' ? 'zh-CN' : 'en';
+                    document.body.classList.toggle('chinese-font', language.value === 'zh');
+                };
+                
+                // 控制背景音乐
+                const toggleMusic = () => {
+                    if ( !audioPlayer.value) return;
+
+                    if (musicPlaying.value) {
+                        audioPlayer.value.pause();
+                    } else {
+                        audioPlayer.value.play().catch(e => {
+                            console.error("Audio play error:", e);
+                            if ( e.name = 'NotAllowedError'){
+                                alert('请点击页面任意位置后重试播放按钮');
+                            }
+                        });
+                    }
+                    musicPlaying.value = !musicPlaying.value;
+                };
+                
+                // 翻页控制
+                const nextPage = () => {
+                    if (currentPage.value < filteredCharacters.value.length - 1) {
+                        currentPage.value++;
+                    }
+                };
+                
+                const prevPage = () => {
+                    if (currentPage.value > 0) {
+                        currentPage.value--;
+                    }
+                };
+                
+                // 处理搜索改变时的页码重置
+                watch(filteredCharacters, (newVal) => {
+                    if (newVal.length > 0 && currentPage.value >= newVal.length) {
+                        currentPage.value = 0;
+                    }
+                });
+                
+                // 开始时间流动
+                startTimer();
+                
+                return {
+                    currentYear,
+                    timerRunning,
+                    customYear,
+                    language,
+                    musicPlaying,
+                    audioPlayer,
+                    searchQuery,
+                    currentPage,
+                    statusChanges,
+                    statusKey,
+                    characters,
+                    filteredCharacters,
+                    currentCharacter,
+                    getLocalizedProp,
+                    isDead,
+                    getStatusText,
+                    getStatusClass,
+                    getEmoji,
+                    toggleTimer,
+                    resetTimer,
+                    jumpToYear,
+                    toggleLanguage,
+                    toggleMusic,
+                    nextPage,
+                    prevPage
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
