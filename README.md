@@ -17,3 +17,7 @@
 </ol>
 
 ## Project screenshot display
+
+![Page Display](https://github.com/EternalRights/the-book-of-life-and-death/raw/2185d54f4646107d0088613f69ce2aa01210f073/other/README-images/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-07-07%20173446.png "Chinese Page")
+
+![Page Display](https://github.com/EternalRights/the-book-of-life-and-death/raw/2185d54f4646107d0088613f69ce2aa01210f073/other/README-images/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-07-07%20173514.png "English Page")
