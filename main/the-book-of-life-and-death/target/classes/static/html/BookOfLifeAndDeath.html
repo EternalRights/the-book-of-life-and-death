@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>西游生死簿</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="../js/axios.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap');
 
@@ -614,9 +615,30 @@
         </div>
     </div>
 
+<!--    &lt;!&ndash; 引入axios &ndash;&gt;-->
+<!--    <script type="module">-->
+<!--        import {createApp} from '../js/vue.esm-browser.js'-->
+<!--        createApp({-->
+<!--            data(){-->
+<!--                return {-->
+<!--                    characters: []-->
+<!--                }-->
+<!--            },-->
+<!--            methods: {-->
+<!--                async search(){-->
+<!--                    const result = await axios.get('../characters');-->
+<!--                    this.characters = result;-->
+<!--                }-->
+<!--            },-->
+<!--            mounted() {-->
+<!--                this.search();-->
+<!--            }-->
+<!--        }).mount('#app')-->
+<!--    </script>-->
+
     <script>
         const { createApp, ref, computed, reactive, watch, onMounted, onUnmounted} = Vue;
-        
+
         createApp({
             setup() {
                 // 状态管理
@@ -631,282 +653,305 @@
                 const currentPage = ref(0);
                 const statusChanges = ref([]);
                 const statusKey = ref(0);
-                
+                const characters = ref([]);
+                const fetchCharacters = async () => {
+                    try{
+                        const reponse = await axios.get('../characters');
+                        characters.value = reponse.data;
+                    } catch(error){
+                        console.error('获取角色数据失败:',error);
+                    }
+                };
+
                 onMounted(()=>{
+                    fetchCharacters();
                     audioPlayer.value = new Audio('../music/yungongxunyin.mp3');
                     audioPlayer.value.loop = true;
                     audioPlayer.value.preload = true;
                 })
 
-                // 角色数据（中英文）
-                const characters = reactive([
-                    {
-                        id: 1,
-                        name: { zh: "孙悟空", en: "Sun Wukong" },
-                        affiliation: { zh: "神仙", en: "Immortal" },
-                        bio: {
-                            zh: "齐天大圣，西游记中主角，唐僧的大徒弟。原为石猴，拜菩提祖师为师学得法术，能七十二变。曾大闹天宫，后被如来佛祖压在五行山下五百年。",
-                            en: "The Monkey King, protagonist of Journey to the West, is the eldest disciple of Tang Sanzang. Originally a stone monkey, he learned magic from Patriarch Subodhi, gaining 72 transformations. He once wreaked havoc in Heaven and was imprisoned under Five Elements Mountain by Buddha for five centuries."
-                        },
-                        causeOfDeath: {
-                            zh: "真假美猴王中被六耳猕猴取代，神秘消失",
-                            en: "Replaced by the Six-Eared Macaque in 'The Real and Fake Monkey King', mysteriously vanished"
-                        },
-                        birthYear: 50,
-                        deathYear: 1650
-                    },
-                    {
-                        id: 2,
-                        name: { zh: "白骨精", en: "White Bone Demon" },
-                        affiliation: { zh: "妖怪", en: "Demon" },
-                        bio: {
-                            zh: "白虎岭上的白骨尸魔，三番两次变化成女子、老妪、老翁欺骗唐僧师徒，是唯一一个不需要法宝就能变化三次的妖怪。",
-                            en: "A demon of white bones at White Tiger Mountain. She transformed into a woman, old woman, and old man to deceive Tang Sanzang and his disciples multiple times. She is the only demon capable of transforming three times without any magical treasures."
-                        },
-                        causeOfDeath: {
-                            zh: "被孙悟空三打白骨精击杀",
-                            en: "Beaten to death by Sun Wukong in 'Three Strikes Against White Bone Demon'"
-                        },
-                        birthYear: 630,
-                        deathYear: 640
-                    },
-                    {
-                        id: 3,
-                        name: { zh: "二郎神", en: "Erlang Shen" },
-                        affiliation: { zh: "神仙", en: "Immortal" },
-                        bio: {
-                            zh: "又称二郎显圣真君，玉帝的外甥，中国神话中的战神。曾奉旨参与围剿花果山捉拿孙悟空，法力高强。",
-                            en: "Also known as True Lord Erlang, nephew of the Jade Emperor, and war god in Chinese mythology. Sent to capture Sun Wukong at Flower Fruit Mountain. Possesses formidable divine powers."
-                        },
-                        causeOfDeath: {
-                            zh: "至今存活于神话传说中",
-                            en: "Alive in mythological legends to this day"
-                        },
-                        birthYear: 60,
-                        deathYear: null
-                    },
-                    {
-                        id: 4,
-                        name: { zh: "唐僧", en: "Tang Sanzang" },
-                        affiliation: { zh: "人类", en: "Human" },
-                        bio: {
-                            zh: "原型为唐朝高僧玄奘法师，奉唐太宗之命前往西天取经。性格慈悲为怀但过于仁慈，常被妖怪所欺骗。在徒弟们保护下完成取经大业。",
-                            en: "Based on the eminent monk Xuanzang of Tang Dynasty. He journeyed to India to retrieve Buddhist scriptures under Emperor Taizong's order. Extremely compassionate but overly merciful, he was often deceived by demons. With disciples' protection, he completed the pilgrimage and attained Buddhahood."
-                        },
-                        causeOfDeath: {
-                            zh: "成佛后超脱生死轮回",
-                            en: "Transcended life-death cycle upon achieving Buddhahood"
-                        },
-                        birthYear: 602,
-                        deathYear: 664
-                    },
-                    {
-                        id: 5,
-                        name: { zh: "猪八戒", en: "Zhu Bajie" },
-                        affiliation: { zh: "神仙", en: "Immortal" },
-                        bio: {
-                            zh: "原为天蓬元帅，因调戏嫦娥被贬下凡。被观音菩萨点化后成为唐僧二徒弟，武器九齿钉耙。取经后封为净坛使者，虽好吃懒做却忠勇可爱。",
-                            en: "Former Marshal of Heavenly Canopy, banished to earth. Became Tang Sanzang's second disciple after enlightenment by Guanyin. Despite laziness and gluttony, loyal and brave. Sealed as Altar Cleanser after pilgrimage."
-                        },
-                        causeOfDeath: {
-                            zh: "成佛后超脱生死轮回",
-                            en: "Transcended life-death cycle upon achieving Buddhahood"
-                        },
-                        birthYear: 150,
-                        deathYear: null
-                    },
-                    {
-                        id: 6,
-                        name: { zh: "如来佛祖", en: "Buddha" },
-                        affiliation: { zh: "神仙", en: "Immortal" },
-                        bio: {
-                            zh: "佛教最高领袖，五指山镇压孙悟空。佛法无边智慧广大，制定取经计划救渡众生，真身居于西方极乐世界。",
-                            en: "Supreme leader of Buddhism who subdued Sun Wukong under Five Finger Mountain. Designed pilgrimage to save humanity. Resides in Western Paradise with boundless wisdom."
-                        },
-                        causeOfDeath: {
-                            zh: "真佛不生不灭",
-                            en: "Cosmic Buddha beyond life-death cycles"
-                        },
-                        birthYear: 0,
-                        deathYear: null
-                    },
-                    {
-                        id: 7,
-                        name: { zh: "牛魔王", en: "Bull Demon King" },
-                        affiliation: { zh: "妖怪", en: "Demon" },
-                        bio: {
-                            zh: "孙悟空结义兄弟，火焰山主人。身怀七十二变神通，手持混铁棍。因红孩儿事件与悟空反目，后被天庭降服皈依佛门。",
-                            en: "Sworn brother of Sun Wukong, ruler of Flame Mountain. Master of transformations, wields iron staff. Turned against Wukong after Red Boy incident, later subdued by Heaven."
-                        },
-                        causeOfDeath: {
-                            zh: "被佛法感化后隐居修炼",
-                            en: "Retreated to seclusion after Buddhist enlightenment"
-                        },
-                        birthYear: 200,
-                        deathYear: 1650
-                    },
-                    {
-                        id: 8,
-                        name: { zh: "巨灵神", en: "Giant Spirit God" },
-                        affiliation: { zh: "神仙", en: "Immortal" },
-                        bio: {
-                            zh: "天庭先锋神将，手持宣花斧。花果山讨伐孙悟空时首战被击败，骁勇善战但技不如猴。后任天门镇守神将。",
-                            en: "Heaven's vanguard commander with floral axe. First challenger defeated by Sun Wukong at Flower Fruit Mountain. Known for valor despite lower combat skills, later guarded heavenly gates."
-                        },
-                        causeOfDeath: {
-                            zh: "神话时代后隐入天界",
-                            en: "Withdrew to celestial realm after mythical era"
-                        },
-                        birthYear: 300,
-                        deathYear: 1400
-                    },
-                    {
-                        id: 9,
-                        name: { zh: "小白龙", en: "White Dragon Horse" },
-                        affiliation: { zh: "神仙", en: "Immortal" },
 
-                        bio: {
-                            zh: "西海龙王三太子，因纵火烧殿被贬。鹰愁涧化白马驮唐僧取经，后封八部天龙广力菩萨。沉静坚毅，关键时化龙出战。",
-                            en: "Third Dragon Prince of West Sea, punished for arson. Carried Tang Sanzang as white horse after redemption. Sealed as Dragon Power Bodhisattva. Known for resilience and timely interventions."
-                        },
-                        causeOfDeath: {
-                            zh: "成佛后化身八部天龙",
-                            en: "Transformed into Eightfold Dragon upon Buddhahood"
-                        },
-                        birthYear: 400,
-                        deathYear: null
-                    },
-                    {
-                        id: 10,
-                        name: { zh: "赤脚大仙", en: "Barefoot Immortal" },
-                        affiliation: { zh: "神仙", en: "Immortal" },
-                        bio: {
-                            zh: "逍遥自在的云游神仙，常提花篮赤足行于三界。警示蟠桃会变故救众仙，点化孙悟空时显露大智慧。",
-                            en: "Carefree roaming immortal who walks barefoot through realms. Warned deities of Peach Banquet disruption. Showed profound wisdom when enlightening Sun Wukong."
-                        },
-                        causeOfDeath: {
-                            zh: "仙踪飘渺化身天地灵气",
-                            en: "Merged with cosmic energies as ethereal being"
-                        },
-                        birthYear: 1000,
-                        deathYear: null
-                    },
-                    {
-                        id: 11,
-                        name: { zh: "东海龙王", en: "Dragon King of East Sea" },
-                        affiliation: { zh: "神仙", en: "Immortal" },
-                        bio: {
-                            zh: "四海龙宫之首，执掌东海风雨。被孙悟空强取定海神针，常助唐僧师徒过海降妖。法器龙珠可呼风唤雨。",
-                            en: "Ruler of Four Seas, controls eastern waters. Provided Golden Cudgel to Sun Wukong. Often helped pilgrims cross seas with dragon pearls commanding storms."
-                        },
-                        causeOfDeath: {
-                            zh: "龙元归海永镇水脉",
-                            en: "Dragon essence returned to eternally guard seas"
-                        },
-                        birthYear: 250,
-                        deathYear: 1800
-                    },
-                    {
-                        id: 12,
-                        name: { zh: "沙僧", en: "Sha Wujing" },
-                        affiliation: { zh: "神仙", en: "Immortal" },
-                        bio: {
-                            zh: "原为卷帘大将，打破琉璃盏被贬流沙河。任劳任怨挑行李的唐僧三徒弟，降妖宝杖威力非凡。取经后封金身罗汉。",
-                            en: "Former Curtain-Raising General banished to Flowing Sand River. Tang Sanzang's third disciple carrying luggage. Used powerful demon-subduing staff, later became Golden Arhat."
-                        },
-                        causeOfDeath: {
-                            zh: "证得罗汉果位",
-                            en: "Attained Arhat enlightenment"
-                        },
-                        birthYear: 300,
-                        deathYear: null
-                    },
-                    {
-                        id: 13,
-                        name: { zh: "观音菩萨", en: "Guanyin Bodhisattva" },
-                        affiliation: { zh: "神仙", en: "Immortal" },
-                        bio: {
-                            zh: "大慈大悲救苦救难，取经计划制定者。多次化身解唐僧劫难，赐孙悟空三根救命毫毛。道场在南海普陀山。",
-                            en: "Embodiment of mercy who designed pilgrimage. Frequently rescued Tang Sanzang, gave Wukong life-saving hairs. Resides at Mount Putuo's Buddhist sanctuary."
-                        },
-                        causeOfDeath: {
-                            zh: "菩萨乘愿永不涅槃",
-                            en: "Bodhisattva vows prevent final nirvana"
-                        },
-                        birthYear: 100,
-                        deathYear: null
-                    },
-                    {
-                        id: 14,
-                        name: { zh: "唐太宗", en: "Emperor Taizong" },
-                        affiliation: { zh: "人类", en: "Human" },
-                        bio: {
-                            zh: "唐朝开明君主，委托唐僧西天取经。因魏征梦斩泾河龙王经历地府还阳，开创贞观盛世支持译传佛经。",
-                            en: "Enlightened Tang emperor who commissioned scripture quest. Visited afterlife after Jing River Dragon incident, revived to support Buddhist translation in Zhenguan golden age."
-                        },
-                        causeOfDeath: {
-                            zh: "阳寿已尽安详驾崩",
-                            en: "Peacefully passed when lifespan ended"
-                        },
-                        birthYear: 1598,
-                        deathYear: 1649
-                    },
-                    {
-                        id: 15,
-                        name: { zh: "铁扇公主", en: "Princess Iron Fan" },
-                        affiliation: { zh: "妖怪", en: "Demon" },
-                        bio: {
-                            zh: "牛魔王之妻，红孩儿之母，持有太阳精叶炼制的芭蕉扇。因红孩儿被观音收服怨恨孙悟空，三借芭蕉扇时设计周旋，最终为救丈夫交出宝扇。隐姓修行后得证正果。",
-                            en: "Wife of Bull Demon King and mother of Red Boy. Wields the Banana Leaf Fan capable of extinguishing flames. Resisted Sun Wukong's borrowing attempts due to resentment over her son's capture by Guanyin, ultimately surrendering the fan to save her husband."
-                        },
-                        causeOfDeath: {
-                            zh: "修得正果超脱轮回",
-                            en: "Achieved enlightenment beyond life-death cycle"
-                        },
-                        birthYear: 200,
-                        deathYear: null  // 地仙修为不死不灭
-                    },
-                    {
-                        id: 16,
-                        name: { zh: "蜘蛛精", en: "Spider Spirits" },
-                        affiliation: { zh: "妖怪", en: "Demon" },
-                        bio: {
-                            zh: "盘丝洞七妖之首，以蛛丝为武器善布天罗地网。化身美人诱捕唐僧，濯垢泉沐浴时遭孙悟空盗衣戏耍，最终被金箍棒打碎原形。",
-                            en: "Seven spider demons residing in Cobweb Cave. Skilled in weaving indestructible silk traps. Captured Tang Sanzang by disguising as bathing maidens, but were defeated when Sun Wukong destroyed their silk webs with golden cudgel."
-                        },
-                        causeOfDeath: {
-                            zh: "被孙悟空破除妖身",
-                            en: "Physical form destroyed by Sun Wukong"
-                        },
-                        birthYear: 620,
-                        deathYear: 640  // 取经途中被灭
-                    },
-                    {
-                        id: 17,
-                        name: { zh: "玉兔精", en: "Jade Rabbit Spirit" },
-                        affiliation: { zh: "妖怪", en: "Demon" },
-                        bio: {
-                            zh: "广寒宫捣药玉兔下凡，为报素娥仙子一掌之仇化身天竺公主。抛绣球强招唐僧为驸马，被识破后现原形交战，终被太阴星君收回月宫。",
-                            en: "Moon Palace's jade rabbit who descended to earth seeking revenge. Impersonated Indian princess to force-marry Tang Sanzang. Revealed by Sun Wukong and subdued by Moon Goddess's intervention."
-                        },
-                        causeOfDeath: {
-                            zh: "回归仙籍永生不灭",
-                            en: "Returned to immortal status eternally"
-                        },
-                        birthYear: 500,
-                        deathYear: null  // 仙籍灵兽无生死
-                    },
-                ]);
-                
+                // // 角色数据（中英文）
+                // const characters = reactive([
+                //     {
+                //         id: 1,
+                //         name: { zh: "孙悟空", en: "Sun Wukong" },
+                //         affiliation: { zh: "神仙", en: "Immortal" },
+                //         bio: {
+                //             zh: "齐天大圣，西游记中主角，唐僧的大徒弟。原为石猴，拜菩提祖师为师学得法术，能七十二变。曾大闹天宫，后被如来佛祖压在五行山下五百年。",
+                //             en: "The Monkey King, protagonist of Journey to the West, is the eldest disciple of Tang Sanzang. Originally a stone monkey, he learned magic from Patriarch Subodhi, gaining 72 transformations. He once wreaked havoc in Heaven and was imprisoned under Five Elements Mountain by Buddha for five centuries."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "真假美猴王中被六耳猕猴取代，神秘消失",
+                //             en: "Replaced by the Six-Eared Macaque in 'The Real and Fake Monkey King', mysteriously vanished"
+                //         },
+                //         birthYear: 50,
+                //         deathYear: 1650
+                //     },
+                //     {
+                //         id: 2,
+                //         name: { zh: "白骨精", en: "White Bone Demon" },
+                //         affiliation: { zh: "妖怪", en: "Demon" },
+                //         bio: {
+                //             zh: "白虎岭上的白骨尸魔，三番两次变化成女子、老妪、老翁欺骗唐僧师徒，是唯一一个不需要法宝就能变化三次的妖怪。",
+                //             en: "A demon of white bones at White Tiger Mountain. She transformed into a woman, old woman, and old man to deceive Tang Sanzang and his disciples multiple times. She is the only demon capable of transforming three times without any magical treasures."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "被孙悟空三打白骨精击杀",
+                //             en: "Beaten to death by Sun Wukong in 'Three Strikes Against White Bone Demon'"
+                //         },
+                //         birthYear: 630,
+                //         deathYear: 640
+                //     },
+                //     {
+                //         id: 3,
+                //         name: { zh: "二郎神", en: "Erlang Shen" },
+                //         affiliation: { zh: "神仙", en: "Immortal" },
+                //         bio: {
+                //             zh: "又称二郎显圣真君，玉帝的外甥，中国神话中的战神。曾奉旨参与围剿花果山捉拿孙悟空，法力高强。",
+                //             en: "Also known as True Lord Erlang, nephew of the Jade Emperor, and war god in Chinese mythology. Sent to capture Sun Wukong at Flower Fruit Mountain. Possesses formidable divine powers."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "至今存活于神话传说中",
+                //             en: "Alive in mythological legends to this day"
+                //         },
+                //         birthYear: 60,
+                //         deathYear: null
+                //     },
+                //     {
+                //         id: 4,
+                //         name: { zh: "唐僧", en: "Tang Sanzang" },
+                //         affiliation: { zh: "人类", en: "Human" },
+                //         bio: {
+                //             zh: "原型为唐朝高僧玄奘法师，奉唐太宗之命前往西天取经。性格慈悲为怀但过于仁慈，常被妖怪所欺骗。在徒弟们保护下完成取经大业。",
+                //             en: "Based on the eminent monk Xuanzang of Tang Dynasty. He journeyed to India to retrieve Buddhist scriptures under Emperor Taizong's order. Extremely compassionate but overly merciful, he was often deceived by demons. With disciples' protection, he completed the pilgrimage and attained Buddhahood."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "成佛后超脱生死轮回",
+                //             en: "Transcended life-death cycle upon achieving Buddhahood"
+                //         },
+                //         birthYear: 602,
+                //         deathYear: 664
+                //     },
+                //     {
+                //         id: 5,
+                //         name: { zh: "猪八戒", en: "Zhu Bajie" },
+                //         affiliation: { zh: "神仙", en: "Immortal" },
+                //         bio: {
+                //             zh: "原为天蓬元帅，因调戏嫦娥被贬下凡。被观音菩萨点化后成为唐僧二徒弟，武器九齿钉耙。取经后封为净坛使者，虽好吃懒做却忠勇可爱。",
+                //             en: "Former Marshal of Heavenly Canopy, banished to earth. Became Tang Sanzang's second disciple after enlightenment by Guanyin. Despite laziness and gluttony, loyal and brave. Sealed as Altar Cleanser after pilgrimage."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "成佛后超脱生死轮回",
+                //             en: "Transcended life-death cycle upon achieving Buddhahood"
+                //         },
+                //         birthYear: 150,
+                //         deathYear: null
+                //     },
+                //     {
+                //         id: 6,
+                //         name: { zh: "如来佛祖", en: "Buddha" },
+                //         affiliation: { zh: "神仙", en: "Immortal" },
+                //         bio: {
+                //             zh: "佛教最高领袖，五指山镇压孙悟空。佛法无边智慧广大，制定取经计划救渡众生，真身居于西方极乐世界。",
+                //             en: "Supreme leader of Buddhism who subdued Sun Wukong under Five Finger Mountain. Designed pilgrimage to save humanity. Resides in Western Paradise with boundless wisdom."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "真佛不生不灭",
+                //             en: "Cosmic Buddha beyond life-death cycles"
+                //         },
+                //         birthYear: 0,
+                //         deathYear: null
+                //     },
+                //     {
+                //         id: 7,
+                //         name: { zh: "牛魔王", en: "Bull Demon King" },
+                //         affiliation: { zh: "妖怪", en: "Demon" },
+                //         bio: {
+                //             zh: "孙悟空结义兄弟，火焰山主人。身怀七十二变神通，手持混铁棍。因红孩儿事件与悟空反目，后被天庭降服皈依佛门。",
+                //             en: "Sworn brother of Sun Wukong, ruler of Flame Mountain. Master of transformations, wields iron staff. Turned against Wukong after Red Boy incident, later subdued by Heaven."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "被佛法感化后隐居修炼",
+                //             en: "Retreated to seclusion after Buddhist enlightenment"
+                //         },
+                //         birthYear: 200,
+                //         deathYear: 1650
+                //     },
+                //     {
+                //         id: 8,
+                //         name: { zh: "巨灵神", en: "Giant Spirit God" },
+                //         affiliation: { zh: "神仙", en: "Immortal" },
+                //         bio: {
+                //             zh: "天庭先锋神将，手持宣花斧。花果山讨伐孙悟空时首战被击败，骁勇善战但技不如猴。后任天门镇守神将。",
+                //             en: "Heaven's vanguard commander with floral axe. First challenger defeated by Sun Wukong at Flower Fruit Mountain. Known for valor despite lower combat skills, later guarded heavenly gates."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "神话时代后隐入天界",
+                //             en: "Withdrew to celestial realm after mythical era"
+                //         },
+                //         birthYear: 300,
+                //         deathYear: 1400
+                //     },
+                //     {
+                //         id: 9,
+                //         name: { zh: "小白龙", en: "White Dragon Horse" },
+                //         affiliation: { zh: "神仙", en: "Immortal" },
+                //
+                //         bio: {
+                //             zh: "西海龙王三太子，因纵火烧殿被贬。鹰愁涧化白马驮唐僧取经，后封八部天龙广力菩萨。沉静坚毅，关键时化龙出战。",
+                //             en: "Third Dragon Prince of West Sea, punished for arson. Carried Tang Sanzang as white horse after redemption. Sealed as Dragon Power Bodhisattva. Known for resilience and timely interventions."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "成佛后化身八部天龙",
+                //             en: "Transformed into Eightfold Dragon upon Buddhahood"
+                //         },
+                //         birthYear: 400,
+                //         deathYear: null
+                //     },
+                //     {
+                //         id: 10,
+                //         name: { zh: "赤脚大仙", en: "Barefoot Immortal" },
+                //         affiliation: { zh: "神仙", en: "Immortal" },
+                //         bio: {
+                //             zh: "逍遥自在的云游神仙，常提花篮赤足行于三界。警示蟠桃会变故救众仙，点化孙悟空时显露大智慧。",
+                //             en: "Carefree roaming immortal who walks barefoot through realms. Warned deities of Peach Banquet disruption. Showed profound wisdom when enlightening Sun Wukong."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "仙踪飘渺化身天地灵气",
+                //             en: "Merged with cosmic energies as ethereal being"
+                //         },
+                //         birthYear: 1000,
+                //         deathYear: null
+                //     },
+                //     {
+                //         id: 11,
+                //         name: { zh: "东海龙王", en: "Dragon King of East Sea" },
+                //         affiliation: { zh: "神仙", en: "Immortal" },
+                //         bio: {
+                //             zh: "四海龙宫之首，执掌东海风雨。被孙悟空强取定海神针，常助唐僧师徒过海降妖。法器龙珠可呼风唤雨。",
+                //             en: "Ruler of Four Seas, controls eastern waters. Provided Golden Cudgel to Sun Wukong. Often helped pilgrims cross seas with dragon pearls commanding storms."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "龙元归海永镇水脉",
+                //             en: "Dragon essence returned to eternally guard seas"
+                //         },
+                //         birthYear: 250,
+                //         deathYear: 1800
+                //     },
+                //     {
+                //         id: 12,
+                //         name: { zh: "沙僧", en: "Sha Wujing" },
+                //         affiliation: { zh: "神仙", en: "Immortal" },
+                //         bio: {
+                //             zh: "原为卷帘大将，打破琉璃盏被贬流沙河。任劳任怨挑行李的唐僧三徒弟，降妖宝杖威力非凡。取经后封金身罗汉。",
+                //             en: "Former Curtain-Raising General banished to Flowing Sand River. Tang Sanzang's third disciple carrying luggage. Used powerful demon-subduing staff, later became Golden Arhat."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "证得罗汉果位",
+                //             en: "Attained Arhat enlightenment"
+                //         },
+                //         birthYear: 300,
+                //         deathYear: null
+                //     },
+                //     {
+                //         id: 13,
+                //         name: { zh: "观音菩萨", en: "Guanyin Bodhisattva" },
+                //         affiliation: { zh: "神仙", en: "Immortal" },
+                //         bio: {
+                //             zh: "大慈大悲救苦救难，取经计划制定者。多次化身解唐僧劫难，赐孙悟空三根救命毫毛。道场在南海普陀山。",
+                //             en: "Embodiment of mercy who designed pilgrimage. Frequently rescued Tang Sanzang, gave Wukong life-saving hairs. Resides at Mount Putuo's Buddhist sanctuary."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "菩萨乘愿永不涅槃",
+                //             en: "Bodhisattva vows prevent final nirvana"
+                //         },
+                //         birthYear: 100,
+                //         deathYear: null
+                //     },
+                //     {
+                //         id: 14,
+                //         name: { zh: "唐太宗", en: "Emperor Taizong" },
+                //         affiliation: { zh: "人类", en: "Human" },
+                //         bio: {
+                //             zh: "唐朝开明君主，委托唐僧西天取经。因魏征梦斩泾河龙王经历地府还阳，开创贞观盛世支持译传佛经。",
+                //             en: "Enlightened Tang emperor who commissioned scripture quest. Visited afterlife after Jing River Dragon incident, revived to support Buddhist translation in Zhenguan golden age."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "阳寿已尽安详驾崩",
+                //             en: "Peacefully passed when lifespan ended"
+                //         },
+                //         birthYear: 1598,
+                //         deathYear: 1649
+                //     },
+                //     {
+                //         id: 15,
+                //         name: { zh: "铁扇公主", en: "Princess Iron Fan" },
+                //         affiliation: { zh: "妖怪", en: "Demon" },
+                //         bio: {
+                //             zh: "牛魔王之妻，红孩儿之母，持有太阳精叶炼制的芭蕉扇。因红孩儿被观音收服怨恨孙悟空，三借芭蕉扇时设计周旋，最终为救丈夫交出宝扇。隐姓修行后得证正果。",
+                //             en: "Wife of Bull Demon King and mother of Red Boy. Wields the Banana Leaf Fan capable of extinguishing flames. Resisted Sun Wukong's borrowing attempts due to resentment over her son's capture by Guanyin, ultimately surrendering the fan to save her husband."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "修得正果超脱轮回",
+                //             en: "Achieved enlightenment beyond life-death cycle"
+                //         },
+                //         birthYear: 200,
+                //         deathYear: null  // 地仙修为不死不灭
+                //     },
+                //     {
+                //         id: 16,
+                //         name: { zh: "蜘蛛精", en: "Spider Spirits" },
+                //         affiliation: { zh: "妖怪", en: "Demon" },
+                //         bio: {
+                //             zh: "盘丝洞七妖之首，以蛛丝为武器善布天罗地网。化身美人诱捕唐僧，濯垢泉沐浴时遭孙悟空盗衣戏耍，最终被金箍棒打碎原形。",
+                //             en: "Seven spider demons residing in Cobweb Cave. Skilled in weaving indestructible silk traps. Captured Tang Sanzang by disguising as bathing maidens, but were defeated when Sun Wukong destroyed their silk webs with golden cudgel."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "被孙悟空破除妖身",
+                //             en: "Physical form destroyed by Sun Wukong"
+                //         },
+                //         birthYear: 620,
+                //         deathYear: 640  // 取经途中被灭
+                //     },
+                //     {
+                //         id: 17,
+                //         name: { zh: "玉兔精", en: "Jade Rabbit Spirit" },
+                //         affiliation: { zh: "妖怪", en: "Demon" },
+                //         bio: {
+                //             zh: "广寒宫捣药玉兔下凡，为报素娥仙子一掌之仇化身天竺公主。抛绣球强招唐僧为驸马，被识破后现原形交战，终被太阴星君收回月宫。",
+                //             en: "Moon Palace's jade rabbit who descended to earth seeking revenge. Impersonated Indian princess to force-marry Tang Sanzang. Revealed by Sun Wukong and subdued by Moon Goddess's intervention."
+                //         },
+                //         causeOfDeath: {
+                //             zh: "回归仙籍永生不灭",
+                //             en: "Returned to immortal status eternally"
+                //         },
+                //         birthYear: 500,
+                //         deathYear: null  // 仙籍灵兽无生死
+                //     },
+                // ]);
+                //
                 // 过滤后的角色列表
+                // const filteredCharacters = computed(() => {
+                //     if (!searchQuery.value) return characters;
+                //
+                //     return characters.filter(char => {
+                //         const nameZh = char.name.zh.toLowerCase();
+                //         const nameEn = char.name.en.toLowerCase();
+                //         const query = searchQuery.value.toLowerCase();
+                //
+                //         return nameZh.includes(query) || nameEn.includes(query);
+                //     });
+                // });
+
                 const filteredCharacters = computed(() => {
-                    if (!searchQuery.value) return characters;
-                    
-                    return characters.filter(char => {
+                    if ( !searchQuery.value) return characters.value;
+
+                    return characters.value.filter(char => {
                         const nameZh = char.name.zh.toLowerCase();
                         const nameEn = char.name.en.toLowerCase();
                         const query = searchQuery.value.toLowerCase();
-                        
+
                         return nameZh.includes(query) || nameEn.includes(query);
                     });
                 });
@@ -933,6 +978,8 @@
                 
                 // 获取角色状态文本
                 const getStatusText = (char) => {
+                    if ( !char || !char.birthYear) return '';
+
                     if (currentYear.value < char.birthYear) {
                         return language.value === 'zh' ? '未出生' : 'Not Born';
                     } else if (isDead(char)) {
@@ -1028,7 +1075,7 @@
                 const checkStatusChanges = (lastYear) => {
                     const changes = [];
                     
-                    characters.forEach(char => {
+                    characters.value.forEach(char => {
                         if (lastYear < char.birthYear && currentYear.value >= char.birthYear) {
                             changes.push(
                                 language.value === 'zh' 
