@@ -12,8 +12,8 @@
 ## Stage Summary
 <ol>
 <li>Upload pure HTML version of the "Register of Life and Death in Journey to the West" to achieve the effect of direct browsing on a web page <strong>(Already accomplished!) </strong></li>
-<li>Link the HTML front-end page with the back-end interface to achieve the effect of controllable data from the back-end.<strong> (In progress...) </strong></li>
-<li>Deployment planning in progress... </li>
+<li>Link the HTML front-end page with the back-end interface to achieve the effect of controllable data from the back-end.<strong> (Already accomplished!) </strong></li>
+<li>Deployment planning in progress...  (In progress...)</li>
 </ol>
 
 ## Project screenshot display
