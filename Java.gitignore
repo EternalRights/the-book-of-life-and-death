@@ -1,4 +1,6 @@
-# Compiled class file
+# 忽略所有编译输出目录
+target/
+**/classes/
 *.class
 
 # Log file
